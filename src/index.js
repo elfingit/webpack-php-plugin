@@ -56,12 +56,19 @@ class PhpPlugin {
                             })
                         })
                     }).then(() => {
-
+                        if (reportProgress) reportProgress(step * step_progress, 'Starting work');
+                        step++;
                     }).catch((err) => {
                         throw err;
                     })
                 );
+
+                Promise.all(promises).catch(err => {
+                    throw err;
+                })
             });
         });
     }
 }
+
+module.exports = PhpPlugin;
