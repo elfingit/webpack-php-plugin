@@ -17,7 +17,7 @@ class PhpPlugin {
         const files = this.options.files;
 
         compiler.hooks.emit.tapAsync({
-            name: 'PHP Plugin',
+            name: 'PhpPlugin',
             context: true
         }, (context, compiler, callback) => {
             const reportProgress = context && context.reportProgress;
@@ -31,7 +31,7 @@ class PhpPlugin {
             files.forEach((file) => {
 
                 let srcFilePath = self.options.srcDir + '/' + file;
-                let dstFilePath = self.options.dstDir + '/' + file;
+                //let dstFilePath = self.options.dstDir + '/' + file;
                 let vars = self.options.vars
 
                 promises.push(new Promise((resolve, reject) => {
@@ -43,29 +43,34 @@ class PhpPlugin {
                             resolve(content)
                         });
                     }).then((content) => {
-
                         for (const [key, value] of Object.entries(vars)) {
-
                             content = content.split('{' + key + '}').join(value)
                         }
 
-                        return new Promise((resolve, reject) => {
-                            fs.writeFile(dstFilePath, content, (err) => {
-                                if (err) return reject(err)
-                                resolve()
-                            })
-                        })
-                    }).then(() => {
-                        if (reportProgress) reportProgress(step * step_progress, 'Starting work');
+                        compiler.assets[file] = {
+                            source: () => {
+                                return content;
+                            },
+                            size: () => {
+                                return content.length;
+                            }
+                        };
+
+                    if (reportProgress) reportProgress(step * step_progress, 'Starting work');
                         step++;
+
                     }).catch((err) => {
                         throw err;
                     })
                 );
 
-                Promise.all(promises).catch(err => {
-                    throw err;
-                })
+                Promise.all(promises)
+                    .then(() => {
+                        callback();
+                    })
+                    .catch(err => {
+                        throw err;
+                    })
             });
         });
     }
